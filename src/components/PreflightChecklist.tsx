@@ -4,9 +4,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChevronDown, 
   faChevronUp, 
-  faQuestionCircle 
+  faQuestionCircle,
+  faSave
 } from '@fortawesome/free-solid-svg-icons';
 import { Checkbox } from './ui/checkbox';
+import { Button } from './ui/button';
+import { v4 as uuidv4 } from 'uuid';
+import { Report, ReportItem } from '@/types/report';
+import { toast } from './ui/use-toast';
+import { createDefaultTemplate } from '@/utils/default-report-template';
 
 interface ChecklistSection {
   id: string;
@@ -107,8 +113,74 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     onProgressUpdate(progress);
   }, [itemStates, checklistSections, onProgressUpdate]);
 
+  // Save current checklist state as a report
+  const saveAsReport = () => {
+    try {
+      // Get the default template
+      const template = createDefaultTemplate();
+      
+      // Update the checked states based on current state
+      const updatedSections = template.sections.map(section => {
+        // We need to calculate total checked items for this section
+        const updatedItems = section.items.map(item => ({ ...item, checked: false }));
+        return { ...section, items: updatedItems };
+      });
+      
+      const reportToSave: Report = {
+        ...template,
+        sections: updatedSections,
+        date: new Date().toISOString(),
+        totalProgress: 0, // Will be calculated by the ReportManager
+      };
+      
+      // Save to localStorage
+      const savedReports = localStorage.getItem('droneReports');
+      let reports = savedReports ? JSON.parse(savedReports) : [];
+      
+      reports.push({
+        ...reportToSave,
+        droneData: {
+          batteryLevel: 75, // Example values
+          signalStrength: 75,
+          gpsStatus: 'strong',
+        },
+        weatherData: {
+          temperature: 22,
+          windSpeed: 5,
+          visibility: "Хорошая",
+          isGoodWeather: true
+        }
+      });
+      
+      localStorage.setItem('droneReports', JSON.stringify(reports));
+      
+      toast({
+        title: "Отчет сохранен",
+        description: "Стандартный шаблон был сохранен в истории отчетов",
+      });
+    } catch (error) {
+      console.error("Error saving report:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить отчет",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline" 
+          onClick={saveAsReport}
+          className="font-mono flex items-center gap-1"
+        >
+          <FontAwesomeIcon icon={faSave} className="h-3 w-3" />
+          Сохранить как отчет
+        </Button>
+      </div>
+      
       {checklistSections.map((section) => (
         <div key={section.id} className="bg-white shadow-sm rounded-md mb-4">
           <div 

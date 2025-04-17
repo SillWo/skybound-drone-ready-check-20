@@ -6,6 +6,7 @@ import { WeatherSection } from '@/components/WeatherSection';
 import { PreflightChecklist } from '@/components/PreflightChecklist';
 import { ReportManager } from '@/components/report/ReportManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { fetchWeatherData } from '@/services/weatherService';
 
 const Index = () => {
   // Drone data state with updatable checklist progress
@@ -17,7 +18,21 @@ const Index = () => {
   });
   
   // Weather data
-  const [isGoodWeather] = useState(true);
+  const [isGoodWeather, setIsGoodWeather] = useState(true);
+  
+  // Load initial weather data
+  useEffect(() => {
+    async function loadWeather() {
+      try {
+        const weather = await fetchWeatherData();
+        setIsGoodWeather(weather.isGoodWeather);
+      } catch (error) {
+        console.error("Failed to load initial weather data:", error);
+      }
+    }
+    
+    loadWeather();
+  }, []);
   
   // Handle checklist progress update
   const handleProgressUpdate = (progress: number) => {
@@ -41,7 +56,7 @@ const Index = () => {
         
         <WeatherSection isGoodWeather={isGoodWeather} />
         
-        <Tabs defaultValue="report-constructor" className="w-full">
+        <Tabs defaultValue="standard-checklist" className="w-full">
           <TabsList className="w-full grid grid-cols-2 mb-4">
             <TabsTrigger value="standard-checklist" className="font-mono">Стандартный чек-лист</TabsTrigger>
             <TabsTrigger value="report-constructor" className="font-mono">Конструктор отчетов</TabsTrigger>
