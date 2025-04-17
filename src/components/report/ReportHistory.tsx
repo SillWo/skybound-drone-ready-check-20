@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -24,6 +23,7 @@ import { Slider } from '../ui/slider';
 import { Calendar } from '../ui/calendar';
 import { Label } from '../ui/label';
 import { toast } from '../ui/use-toast';
+import { TooltipProvider } from '../ui/tooltip';
 
 interface ReportHistoryProps {
   reports: SavedReport[];
@@ -36,7 +36,6 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [filteredReports, setFilteredReports] = useState<SavedReport[]>(reports);
   
-  // Filter states
   const [dateRange, setDateRange] = useState<{ from: Date | undefined, to: Date | undefined }>({
     from: undefined,
     to: undefined
@@ -44,11 +43,9 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
   const [progressRange, setProgressRange] = useState<number[]>([0, 100]);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   
-  // Update filtered reports when reports or filters change
   useEffect(() => {
     let result = [...reports];
     
-    // Filter by date range
     if (dateRange.from) {
       result = result.filter(report => {
         const reportDate = new Date(report.date);
@@ -63,24 +60,20 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
       });
     }
     
-    // Filter by progress range
     result = result.filter(report => 
       report.totalProgress >= progressRange[0] && 
       report.totalProgress <= progressRange[1]
     );
     
-    // Sort by date, newest first
     result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     setFilteredReports(result);
   }, [reports, dateRange, progressRange]);
   
-  // Toggle report details
   const toggleReportDetails = (reportId: string) => {
     setSelectedReport(prev => prev === reportId ? null : reportId);
   };
   
-  // Format date
   const formatDate = (dateString: string) => {
     try {
       return format(parseISO(dateString), 'dd MMMM yyyy, HH:mm', { locale: ru });
@@ -89,7 +82,6 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
     }
   };
   
-  // Handle export to PDF
   const handleExportToPdf = async (report: SavedReport) => {
     toast({
       title: "Создание PDF",
@@ -113,12 +105,10 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
     }
   };
   
-  // Handle export to JSON
   const handleExportToJson = (report: SavedReport) => {
     exportToJson(report);
   };
   
-  // Reset filters
   const resetFilters = () => {
     setDateRange({ from: undefined, to: undefined });
     setProgressRange([0, 100]);
