@@ -9,8 +9,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
-import { v4 as uuidv4 } from 'uuid';
-import { Report, ReportItem } from '@/types/report';
 import { toast } from './ui/use-toast';
 import { createDefaultTemplate } from '@/utils/default-report-template';
 
@@ -32,47 +30,22 @@ interface PreflightChecklistProps {
 }
 
 export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps) {
-  const checklistSections: ChecklistSection[] = [
-    {
-      id: "section1",
-      title: "Предварительная подготовка",
-      location: "На базе",
-      items: [
-        { id: "item1", label: "Зарядить батареи", hasHelp: false },
-        { id: "item2", label: "Подготовить и загрузить подложки для местности полетов на НСУ", hasHelp: true },
-        { id: "item3", label: "Загрузить карту высот на НСУ", hasHelp: true },
-        { id: "item4", label: "Подготовить маршрут", hasHelp: true },
-        { id: "item5", label: "Произвести сбор оборудования по списку", hasHelp: false }
-      ]
-    },
-    {
-      id: "section2",
-      title: "Предварительная подготовка",
-      location: "На месте",
-      items: [
-        { id: "item6", label: "Оценить погодные условия", hasHelp: false },
-        { id: "item7", label: "Произвести сборку БЛА", hasHelp: true },
-        { id: "item8", label: "Развернуть НСУ", hasHelp: true }
-      ]
-    },
-    {
-      id: "section3",
-      title: "Предварительная подготовка",
-      location: "Перед взлетом",
-      items: [
-        { id: "item9", label: "Подать электропитание питание на БЛА", hasHelp: true },
-        { id: "item10", label: "Проверить наличие связи с НСУ", hasHelp: true },
-        { id: "item11", label: "Пройти предполетные проверки", hasHelp: false },
-        { id: "item12", label: "Сделать контрольное фото (rphoto -e, rphoto -c 0)", hasHelp: true }
-      ]
-    }
-  ];
+  // Get the checklist sections from the default template
+  const template = createDefaultTemplate();
+  const checklistSections: ChecklistSection[] = template.sections.map(section => ({
+    id: section.id,
+    title: section.title,
+    location: section.location,
+    items: section.items.map(item => ({
+      id: item.id,
+      label: item.label,
+      hasHelp: item.hasHelp
+    }))
+  }));
   
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    section1: true,
-    section2: true,
-    section3: true
-  });
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(
+    checklistSections.reduce((acc, section) => ({...acc, [section.id]: true}), {})
+  );
   
   const [itemStates, setItemStates] = useState<Record<string, boolean>>(
     checklistSections.flatMap(section => section.items).reduce((acc, item) => ({...acc, [item.id]: false}), {})
@@ -121,16 +94,24 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
       
       // Update the checked states based on current state
       const updatedSections = template.sections.map(section => {
-        // We need to calculate total checked items for this section
-        const updatedItems = section.items.map(item => ({ ...item, checked: false }));
+        // Update items with current checked states
+        const updatedItems = section.items.map(item => ({ 
+          ...item, 
+          checked: itemStates[item.id] || false 
+        }));
         return { ...section, items: updatedItems };
       });
       
-      const reportToSave: Report = {
+      // Calculate total progress
+      const totalItems = checklistSections.reduce((total, section) => total + section.items.length, 0);
+      const checkedItems = Object.values(itemStates).filter(Boolean).length;
+      const progress = Math.round((checkedItems / totalItems) * 100);
+      
+      const reportToSave = {
         ...template,
         sections: updatedSections,
         date: new Date().toISOString(),
-        totalProgress: 0, // Will be calculated by the ReportManager
+        totalProgress: progress,
       };
       
       // Save to localStorage
