@@ -57,7 +57,7 @@ export const createDefaultTemplate = (): Report => {
         location: 'Перед взлетом',
         items: [
           { id: uuidv4(), label: 'Подать электропитание питание на БЛА, дождаться загрузки автопилота', hasHelp: true, checked: false },
-          { id: uuidv4(), label: 'Проверить наличие связи с НСУ, убедится в корректности телеметрии, убедиться в корректности показаний авиагоризонта (крен, тангаж, координаты)', hasHelp: true, checked: false },
+          { id: uuidv4(), label: 'Проверить наличие связи с НСУ, убедится в корректности телеметрии', hasHelp: true, checked: false },
           { id: uuidv4(), label: 'Пройти предполетные проверки: Сервоприводы', hasHelp: false, checked: false },
           { id: uuidv4(), label: 'Пройти предполетные проверки: Регуляторы', hasHelp: false, checked: false },
           { id: uuidv4(), label: 'Пройти предполетные проверки: БАНО', hasHelp: false, checked: false },

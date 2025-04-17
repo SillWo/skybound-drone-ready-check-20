@@ -9,13 +9,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
+import { v4 as uuidv4 } from 'uuid';
+import { Report, ReportItem } from '@/types/report';
 import { toast } from './ui/use-toast';
 import { createDefaultTemplate } from '@/utils/default-report-template';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 interface ChecklistSection {
   id: string;
@@ -35,22 +32,47 @@ interface PreflightChecklistProps {
 }
 
 export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps) {
-  // Get the checklist sections from the default template
-  const template = createDefaultTemplate();
-  const checklistSections: ChecklistSection[] = template.sections.map(section => ({
-    id: section.id,
-    title: section.title,
-    location: section.location,
-    items: section.items.map(item => ({
-      id: item.id,
-      label: item.label,
-      hasHelp: item.hasHelp
-    }))
-  }));
+  const checklistSections: ChecklistSection[] = [
+    {
+      id: "section1",
+      title: "Предварительная подготовка",
+      location: "На базе",
+      items: [
+        { id: "item1", label: "Зарядить батареи", hasHelp: false },
+        { id: "item2", label: "Подготовить и загрузить подложки для местности полетов на НСУ", hasHelp: true },
+        { id: "item3", label: "Загрузить карту высот на НСУ", hasHelp: true },
+        { id: "item4", label: "Подготовить маршрут", hasHelp: true },
+        { id: "item5", label: "Произвести сбор оборудования по списку", hasHelp: false }
+      ]
+    },
+    {
+      id: "section2",
+      title: "Предварительная подготовка",
+      location: "На месте",
+      items: [
+        { id: "item6", label: "Оценить погодные условия", hasHelp: false },
+        { id: "item7", label: "Произвести сборку БЛА", hasHelp: true },
+        { id: "item8", label: "Развернуть НСУ", hasHelp: true }
+      ]
+    },
+    {
+      id: "section3",
+      title: "Предварительная подготовка",
+      location: "Перед взлетом",
+      items: [
+        { id: "item9", label: "Подать электропитание питание на БЛА", hasHelp: true },
+        { id: "item10", label: "Проверить наличие связи с НСУ", hasHelp: true },
+        { id: "item11", label: "Пройти предполетные проверки", hasHelp: false },
+        { id: "item12", label: "Сделать контрольное фото (rphoto -e, rphoto -c 0)", hasHelp: true }
+      ]
+    }
+  ];
   
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(
-    checklistSections.reduce((acc, section) => ({...acc, [section.id]: true}), {})
-  );
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    section1: true,
+    section2: true,
+    section3: true
+  });
   
   const [itemStates, setItemStates] = useState<Record<string, boolean>>(
     checklistSections.flatMap(section => section.items).reduce((acc, item) => ({...acc, [item.id]: false}), {})
@@ -99,24 +121,16 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
       
       // Update the checked states based on current state
       const updatedSections = template.sections.map(section => {
-        // Update items with current checked states
-        const updatedItems = section.items.map(item => ({ 
-          ...item, 
-          checked: itemStates[item.id] || false 
-        }));
+        // We need to calculate total checked items for this section
+        const updatedItems = section.items.map(item => ({ ...item, checked: false }));
         return { ...section, items: updatedItems };
       });
       
-      // Calculate total progress
-      const totalItems = checklistSections.reduce((total, section) => total + section.items.length, 0);
-      const checkedItems = Object.values(itemStates).filter(Boolean).length;
-      const progress = Math.round((checkedItems / totalItems) * 100);
-      
-      const reportToSave = {
+      const reportToSave: Report = {
         ...template,
         sections: updatedSections,
         date: new Date().toISOString(),
-        totalProgress: progress,
+        totalProgress: 0, // Will be calculated by the ReportManager
       };
       
       // Save to localStorage
@@ -168,40 +182,36 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
       </div>
       
       {checklistSections.map((section) => (
-        <Collapsible
-          key={section.id}
-          className="bg-white shadow-sm rounded-md mb-4"
-          open={expandedSections[section.id]}
-          onOpenChange={(isOpen) => setExpandedSections(prev => ({ ...prev, [section.id]: isOpen }))}
-        >
-          <div className="p-4 flex items-center justify-between">
-            <CollapsibleTrigger className="flex-1 flex justify-between items-center">
-              <div>
-                <h3 className="font-mono font-medium text-lg text-left">{section.title}</h3>
-                <p className="font-mono text-sm text-gray-500 text-left">{section.location}</p>
+        <div key={section.id} className="bg-white shadow-sm rounded-md mb-4">
+          <div 
+            className="p-4 flex items-center justify-between cursor-pointer"
+            onClick={() => toggleSection(section.id)}
+          >
+            <div>
+              <h3 className="font-mono font-medium text-lg">{section.title}</h3>
+              <p className="font-mono text-sm text-gray-500">{section.location}</p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-32 h-1.5 bg-gray-300 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-green-500 rounded-full transition-all" 
+                    style={{ width: `${calculateProgress(section.items)}%` }}
+                  />
+                </div>
+                <span className="text-sm font-mono font-medium">{calculateProgress(section.items)}%</span>
               </div>
               
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-32 h-1.5 bg-gray-300 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-green-500 rounded-full transition-all" 
-                      style={{ width: `${calculateProgress(section.items)}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-mono font-medium">{calculateProgress(section.items)}%</span>
-                </div>
-                
-                {expandedSections[section.id] ? (
-                  <FontAwesomeIcon icon={faChevronUp} className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <FontAwesomeIcon icon={faChevronDown} className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-            </CollapsibleTrigger>
+              {expandedSections[section.id] ? (
+                <FontAwesomeIcon icon={faChevronUp} className="h-5 w-5 text-gray-500" />
+              ) : (
+                <FontAwesomeIcon icon={faChevronDown} className="h-5 w-5 text-gray-500" />
+              )}
+            </div>
           </div>
           
-          <CollapsibleContent>
+          {expandedSections[section.id] && (
             <div>
               {section.items.map((item) => (
                 <div 
@@ -229,8 +239,8 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
                 </div>
               ))}
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          )}
+        </div>
       ))}
     </>
   );
