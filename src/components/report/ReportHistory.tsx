@@ -41,7 +41,7 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
     from: undefined,
     to: undefined
   });
-  const [progressRange, setProgressRange] = useState<[number, number]>([0, 100]);
+  const [progressRange, setProgressRange] = useState<number[]>([0, 100]);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   
   // Update filtered reports when reports or filters change
@@ -211,12 +211,11 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
                       </span>
                     </div>
                     <Slider
-                      defaultValue={progressRange}
                       min={0}
                       max={100}
                       step={1}
                       value={progressRange}
-                      onValueChange={(values) => setProgressRange(values as [number, number])}
+                      onValueChange={(values) => setProgressRange(values)}
                       className="py-4"
                     />
                   </div>

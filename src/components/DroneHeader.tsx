@@ -8,7 +8,7 @@ export const DroneHeader = () => {
         <img 
           src="/lovable-uploads/582d9d93-d3d5-45c4-970c-08fb25417162.png" 
           alt="АБАКС Логотип" 
-          className="h-12 w-auto object-contain"
+          className="h-12 w-auto object-contain mix-blend-multiply"
         />
       </div>
     </header>
