@@ -1,21 +1,31 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DroneHeader } from '@/components/DroneHeader';
 import { MinimalistDroneDashboard } from '@/components/MinimalistDroneDashboard';
 import { WeatherSection } from '@/components/WeatherSection';
 import { PreflightChecklist } from '@/components/PreflightChecklist';
+import { ReportManager } from '@/components/report/ReportManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
-  // Mock drone data (in a real app, this would come from device connection)
-  const [droneData] = useState({
+  // Drone data state with updatable checklist progress
+  const [droneData, setDroneData] = useState({
     batteryLevel: 75,
     signalStrength: 75,
     gpsStatus: 'strong' as 'strong' | 'weak' | 'no-signal',
-    checklistProgress: 75
+    checklistProgress: 0
   });
   
-  // Mock weather data
+  // Weather data
   const [isGoodWeather] = useState(true);
+  
+  // Handle checklist progress update
+  const handleProgressUpdate = (progress: number) => {
+    setDroneData(prev => ({
+      ...prev,
+      checklistProgress: progress
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-[#f0f0f0] p-2 sm:p-4 font-mono">
@@ -31,7 +41,23 @@ const Index = () => {
         
         <WeatherSection isGoodWeather={isGoodWeather} />
         
-        <PreflightChecklist />
+        <Tabs defaultValue="report-constructor" className="w-full">
+          <TabsList className="w-full grid grid-cols-2 mb-4">
+            <TabsTrigger value="standard-checklist" className="font-mono">Стандартный чек-лист</TabsTrigger>
+            <TabsTrigger value="report-constructor" className="font-mono">Конструктор отчетов</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="standard-checklist">
+            <PreflightChecklist onProgressUpdate={handleProgressUpdate} />
+          </TabsContent>
+          
+          <TabsContent value="report-constructor">
+            <ReportManager 
+              droneData={droneData}
+              onProgressUpdate={handleProgressUpdate}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

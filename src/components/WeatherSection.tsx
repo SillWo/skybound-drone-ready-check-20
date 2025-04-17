@@ -40,7 +40,7 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
       {expanded && (
         <div className="mt-3 border-t pt-3">
           <div className="text-sm text-gray-600 font-mono">
-            Temperature: 22°C, Wind: 5 km/h, Visibility: Good
+            Температура: 22°C, Ветер: 5 км/ч, Видимость: Хорошая
           </div>
         </div>
       )}

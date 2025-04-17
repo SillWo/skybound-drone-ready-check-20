@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChevronDown, 
@@ -21,7 +21,11 @@ interface ChecklistItem {
   hasHelp: boolean;
 }
 
-export function PreflightChecklist() {
+interface PreflightChecklistProps {
+  onProgressUpdate: (progress: number) => void;
+}
+
+export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps) {
   const checklistSections: ChecklistSection[] = [
     {
       id: "section1",
@@ -73,7 +77,19 @@ export function PreflightChecklist() {
   };
   
   const toggleItem = (id: string) => {
-    setItemStates(prev => ({...prev, [id]: !prev[id]}));
+    setItemStates(prev => {
+      const newStates = {...prev, [id]: !prev[id]};
+      
+      // Calculate and update total progress
+      const totalItems = checklistSections.reduce((total, section) => total + section.items.length, 0);
+      const checkedItems = Object.values(newStates).filter(Boolean).length;
+      const progress = Math.round((checkedItems / totalItems) * 100);
+      
+      // Call progress update callback
+      onProgressUpdate(progress);
+      
+      return newStates;
+    });
   };
 
   // Calculate progress for each section
@@ -82,6 +98,14 @@ export function PreflightChecklist() {
     const checkedItems = itemIds.filter(id => itemStates[id]).length;
     return Math.round((checkedItems / itemIds.length) * 100);
   };
+  
+  // Calculate and update total progress when component mounts or itemStates changes
+  useEffect(() => {
+    const totalItems = checklistSections.reduce((total, section) => total + section.items.length, 0);
+    const checkedItems = Object.values(itemStates).filter(Boolean).length;
+    const progress = Math.round((checkedItems / totalItems) * 100);
+    onProgressUpdate(progress);
+  }, [itemStates, checklistSections, onProgressUpdate]);
 
   return (
     <>
@@ -146,13 +170,6 @@ export function PreflightChecklist() {
           )}
         </div>
       ))}
-      
-      <div className="mt-4 mb-8">
-        <div className="font-mono text-sm text-gray-500 mb-2">Загрузить файл</div>
-        <div className="bg-gray-200 rounded-md p-3 h-16 flex items-center justify-center">
-          <span className="text-gray-400 font-mono">Выберите файл для загрузки</span>
-        </div>
-      </div>
     </>
   );
 }
