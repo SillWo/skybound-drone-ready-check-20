@@ -19,12 +19,12 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
       >
         <div className="flex items-center gap-2">
           <FontAwesomeIcon icon={faSun} className="h-5 w-5 text-gray-700" />
-          <span className="text-base font-medium">Погодные условия</span>
+          <span className="text-base font-mono font-medium">Погодные условия</span>
         </div>
         
         <div className="flex items-center gap-2">
           <span className={cn(
-            "text-sm font-medium px-2 py-0.5 rounded",
+            "text-sm font-mono px-2 py-0.5 rounded",
             isGoodWeather ? "text-green-600" : "text-red-600"
           )}>
             {isGoodWeather ? "Подходит для полета" : "Не подходит для полета"}
@@ -39,7 +39,7 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
       
       {expanded && (
         <div className="mt-3 border-t pt-3">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 font-mono">
             Temperature: 22°C, Wind: 5 km/h, Visibility: Good
           </div>
         </div>
@@ -47,4 +47,3 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
     </div>
   );
 }
-
