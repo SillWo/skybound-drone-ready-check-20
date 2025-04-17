@@ -22,7 +22,6 @@ const reportToHTML = (report: SavedReport): string => {
     <html>
     <head>
       <title>Отчет: ${report.title}</title>
-      <meta charset="UTF-8">
       <style>
         body {
           font-family: Arial, sans-serif;
@@ -296,31 +295,16 @@ export const exportToPdf = async (report: SavedReport) => {
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i] as HTMLElement;
       
-      // Capture section as canvas with specific settings to prevent artifacts
+      // Capture section as canvas
       const canvas = await html2canvas(section, {
         scale: 1.5,
         useCORS: true,
         allowTaint: true,
-        logging: false,
-        letterRendering: true, // Improves text rendering
-        removeContainer: true, // Clean up after rendering
-        backgroundColor: '#FFFFFF', // Ensure white background
-        onclone: (clonedDoc) => {
-          // Extra processing to ensure clean text rendering
-          const texts = clonedDoc.querySelectorAll('*');
-          texts.forEach(node => {
-            if (node instanceof HTMLElement) {
-              node.style.textRendering = 'geometricPrecision';
-              node.style.fontSmooth = 'always';
-              node.style.webkitFontSmoothing = 'antialiased';
-              node.style.mozOsxFontSmoothing = 'grayscale';
-            }
-          });
-        }
+        logging: false
       });
       
-      // Convert canvas to image with proper encoding
-      const imgData = canvas.toDataURL('image/jpeg', 1.0); // Using JPEG with max quality
+      // Convert canvas to image
+      const imgData = canvas.toDataURL('image/png');
       
       // Calculate image dimensions to fit page width
       const imgWidth = pageWidth - 40; // margins
@@ -338,7 +322,7 @@ export const exportToPdf = async (report: SavedReport) => {
       }
       
       // Add image to PDF
-      pdf.addImage(imgData, 'JPEG', 20, currentY, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 20, currentY, imgWidth, imgHeight);
       currentY += imgHeight + 20;
     }
     
