@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { Sun, ChevronDown, ChevronUp } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSun, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { cn } from '@/lib/utils';
 
 interface WeatherSectionProps {
@@ -17,7 +18,7 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
-          <Sun className="h-5 w-5 text-gray-700" />
+          <FontAwesomeIcon icon={faSun} className="h-5 w-5 text-gray-700" />
           <span className="text-base font-medium">Погодные условия</span>
         </div>
         
@@ -29,16 +30,15 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
             {isGoodWeather ? "Подходит для полета" : "Не подходит для полета"}
           </span>
           {expanded ? (
-            <ChevronUp className="h-5 w-5 text-gray-500" />
+            <FontAwesomeIcon icon={faChevronUp} className="h-5 w-5 text-gray-500" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-gray-500" />
+            <FontAwesomeIcon icon={faChevronDown} className="h-5 w-5 text-gray-500" />
           )}
         </div>
       </div>
       
       {expanded && (
         <div className="mt-3 border-t pt-3">
-          {/* Weather details would go here */}
           <div className="text-sm text-gray-600">
             Temperature: 22°C, Wind: 5 km/h, Visibility: Good
           </div>
@@ -47,3 +47,4 @@ export function WeatherSection({ isGoodWeather }: WeatherSectionProps) {
     </div>
   );
 }
+

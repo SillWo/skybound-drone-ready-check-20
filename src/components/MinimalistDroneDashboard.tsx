@@ -1,13 +1,19 @@
 
 import React from 'react';
-import { Battery, Wifi, Navigation, ClipboardCheck } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faBatteryFull, 
+  faWifi, 
+  faLocationArrow, 
+  faClipboardCheck 
+} from '@fortawesome/free-solid-svg-icons';
 import { cn } from '@/lib/utils';
 
 interface MinimalistDroneDashboardProps {
-  batteryLevel: number; // 0-100
-  signalStrength: number; // 0-100
+  batteryLevel: number;
+  signalStrength: number;
   gpsStatus: 'strong' | 'weak' | 'no-signal';
-  checklistProgress: number; // 0-100
+  checklistProgress: number;
 }
 
 export function MinimalistDroneDashboard({
@@ -35,7 +41,7 @@ export function MinimalistDroneDashboard({
         <div className="bg-gray-200 rounded-md p-3">
           <div className="flex justify-between items-center mb-1">
             <div className="flex items-center gap-2">
-              <Battery className="h-5 w-5 text-gray-700" />
+              <FontAwesomeIcon icon={faBatteryFull} className="h-5 w-5 text-gray-700" />
               <span className="text-sm">Батарея</span>
             </div>
             <span className="text-sm font-medium">{batteryLevel}%</span>
@@ -51,7 +57,7 @@ export function MinimalistDroneDashboard({
         <div className="bg-gray-200 rounded-md p-3">
           <div className="flex justify-between items-center mb-1">
             <div className="flex items-center gap-2">
-              <Wifi className="h-5 w-5 text-gray-700" />
+              <FontAwesomeIcon icon={faWifi} className="h-5 w-5 text-gray-700" />
               <span className="text-sm">Сигнал</span>
             </div>
             <span className="text-sm font-medium">{signalStrength}%</span>
@@ -67,7 +73,7 @@ export function MinimalistDroneDashboard({
         <div className="bg-gray-200 rounded-md p-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Navigation className="h-5 w-5 text-gray-700" />
+              <FontAwesomeIcon icon={faLocationArrow} className="h-5 w-5 text-gray-700" />
               <span className="text-sm">GPS</span>
             </div>
           </div>
@@ -86,7 +92,7 @@ export function MinimalistDroneDashboard({
         <div className="bg-gray-200 rounded-md p-3">
           <div className="flex justify-between items-center mb-1">
             <div className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5 text-gray-700" />
+              <FontAwesomeIcon icon={faClipboardCheck} className="h-5 w-5 text-gray-700" />
               <span className="text-sm">Чек-лист</span>
             </div>
             <span className="text-sm font-medium">{checklistProgress}%</span>
@@ -109,3 +115,4 @@ export function MinimalistDroneDashboard({
     </div>
   );
 }
+

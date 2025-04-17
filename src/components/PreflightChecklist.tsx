@@ -1,6 +1,11 @@
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faChevronDown, 
+  faChevronUp, 
+  faQuestionCircle 
+} from '@fortawesome/free-solid-svg-icons';
 import { Checkbox } from './ui/checkbox';
 
 interface ChecklistItem {
@@ -37,9 +42,9 @@ export function PreflightChecklist() {
       >
         <h3 className="font-medium text-lg">Предварительная подготовка</h3>
         {expanded ? (
-          <ChevronUp className="h-5 w-5 text-gray-500" />
+          <FontAwesomeIcon icon={faChevronUp} className="h-5 w-5 text-gray-500" />
         ) : (
-          <ChevronDown className="h-5 w-5 text-gray-500" />
+          <FontAwesomeIcon icon={faChevronDown} className="h-5 w-5 text-gray-500" />
         )}
       </div>
       
@@ -65,7 +70,7 @@ export function PreflightChecklist() {
               </div>
               
               {item.hasHelp && (
-                <HelpCircle className="h-5 w-5 text-gray-400" />
+                <FontAwesomeIcon icon={faQuestionCircle} className="h-5 w-5 text-gray-400" />
               )}
             </div>
           ))}
@@ -74,3 +79,4 @@ export function PreflightChecklist() {
     </div>
   );
 }
+
