@@ -20,84 +20,52 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
-interface ChecklistSection {
-  id: string;
-  title: string;
-  location: string;
-  items: ChecklistItem[];
-}
-
-interface ChecklistItem {
-  id: string;
-  label: string;
-  hasHelp: boolean;
-  imageUrl?: string; // Add image URL
-}
-
-interface ItemState {
-  checked: boolean;
-  comment?: string;
-  imageUrl?: string;
-}
-
 interface PreflightChecklistProps {
   onProgressUpdate: (progress: number) => void;
 }
 
 export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps) {
-  const checklistSections: ChecklistSection[] = [
-    {
-      id: "section1",
-      title: "Предварительная подготовка",
-      location: "На базе",
-      items: [
-        { id: "item1", label: "Зарядить батареи", hasHelp: false },
-        { id: "item2", label: "Подготовить и загрузить подложки для местности полетов на НСУ", hasHelp: true },
-        { id: "item3", label: "Загрузить карту высот на НСУ", hasHelp: true },
-        { id: "item4", label: "Подготовить маршрут", hasHelp: true },
-        { id: "item5", label: "Произвести сбор оборудования по списку", hasHelp: false }
-      ]
-    },
-    {
-      id: "section2",
-      title: "Предварительная подготовка",
-      location: "На месте",
-      items: [
-        { id: "item6", label: "Оценить погодные условия", hasHelp: false },
-        { id: "item7", label: "Произвести сборку БЛА", hasHelp: true },
-        { id: "item8", label: "Развернуть НСУ", hasHelp: true }
-      ]
-    },
-    {
-      id: "section3",
-      title: "Предварительная подготовка",
-      location: "Перед взлетом",
-      items: [
-        { id: "item9", label: "Подать электропитание питание на БЛА", hasHelp: true },
-        { id: "item10", label: "Проверить наличие связи с НСУ", hasHelp: true },
-        { id: "item11", label: "Пройти предполетные проверки", hasHelp: false },
-        { id: "item12", label: "Сделать контрольное фото (rphoto -e, rphoto -c 0)", hasHelp: true }
-      ]
-    }
-  ];
+  // Use the default template for the checklist sections
+  const [template, setTemplate] = useState(createDefaultTemplate());
   
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    section1: true,
-    section2: true,
-    section3: true
-  });
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  
+  // Initialize expanded sections from template
+  useEffect(() => {
+    const initialExpanded: Record<string, boolean> = {};
+    template.sections.forEach(section => {
+      initialExpanded[section.id] = true;
+    });
+    setExpandedSections(initialExpanded);
+  }, [template]);
   
   // Updated to store more complex state for each item
-  const [itemStates, setItemStates] = useState<Record<string, ItemState>>(() => {
-    // Initialize state for each item
-    const initialState: Record<string, ItemState> = {};
-    checklistSections.forEach(section => {
+  const [itemStates, setItemStates] = useState<Record<string, {
+    checked: boolean;
+    comment?: string;
+    imageUrl?: string;
+  }>>({});
+  
+  // Initialize item states from template
+  useEffect(() => {
+    const initialStates: Record<string, {
+      checked: boolean;
+      comment?: string;
+      imageUrl?: string;
+    }> = {};
+    
+    template.sections.forEach(section => {
       section.items.forEach(item => {
-        initialState[item.id] = { checked: false };
+        initialStates[item.id] = { 
+          checked: item.checked || false,
+          comment: item.comment,
+          imageUrl: item.imageUrl
+        };
       });
     });
-    return initialState;
-  });
+    
+    setItemStates(initialStates);
+  }, [template]);
   
   // Dialog for image and comments
   const [showItemDialog, setShowItemDialog] = useState(false);
@@ -177,15 +145,15 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
   };
 
   // Update total progress
-  const updateTotalProgress = (states: Record<string, ItemState>) => {
-    const totalItems = checklistSections.reduce((total, section) => total + section.items.length, 0);
+  const updateTotalProgress = (states: Record<string, {checked: boolean, comment?: string, imageUrl?: string}>) => {
+    const totalItems = template.sections.reduce((total, section) => total + section.items.length, 0);
     const checkedItems = Object.values(states).filter(state => state.checked).length;
     const progress = Math.round((checkedItems / totalItems) * 100);
     onProgressUpdate(progress);
   };
 
   // Calculate progress for each section
-  const calculateProgress = (sectionItems: ChecklistItem[]) => {
+  const calculateProgress = (sectionItems: ReportItem[]) => {
     const itemIds = sectionItems.map(item => item.id);
     const checkedItems = itemIds.filter(id => itemStates[id]?.checked).length;
     return Math.round((checkedItems / itemIds.length) * 100);
@@ -194,14 +162,11 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
   // Calculate and update total progress when component mounts or itemStates changes
   useEffect(() => {
     updateTotalProgress(itemStates);
-  }, [itemStates, checklistSections, onProgressUpdate]);
+  }, [itemStates]);
 
   // Save current checklist state as a report
   const saveAsReport = () => {
     try {
-      // Get the default template
-      const template = createDefaultTemplate();
-      
       // Update the checked states based on current state
       const updatedSections = template.sections.map(section => {
         // Update items with the current state
@@ -248,7 +213,7 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
       
       toast({
         title: "Отчет сохранен",
-        description: "Стандартный шаблон был сохранен в истории отчетов",
+        description: "Отчет был сохранен в истории отчетов",
       });
     } catch (error) {
       console.error("Error saving report:", error);
@@ -273,7 +238,7 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
         </Button>
       </div>
       
-      {checklistSections.map((section) => (
+      {template.sections.map((section) => (
         <div key={section.id} className="bg-white shadow-sm rounded-md mb-4">
           <div 
             className="p-4 flex items-center justify-between cursor-pointer"
