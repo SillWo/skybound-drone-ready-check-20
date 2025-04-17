@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlus, 
@@ -9,16 +9,19 @@ import {
   faChevronDown,
   faChevronUp,
   faQuestionCircle,
-  faComment
+  faComment,
+  faCamera,
+  faImage
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { ReportItem, ReportSection, Report } from '@/types/report';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
 
 interface ReportConstructorProps {
   initialReport?: Report;
@@ -49,6 +52,12 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [itemForComment, setItemForComment] = useState<{sectionId: string, itemId: string} | null>(null);
   const [commentText, setCommentText] = useState('');
+
+  // New state for image dialog
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [itemForImage, setItemForImage] = useState<{sectionId: string, itemId: string} | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Toggle section expansion
   const toggleSection = (sectionId: string) => {
@@ -193,6 +202,16 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
     setShowCommentDialog(true);
   };
 
+  // Open image dialog
+  const openImageDialog = (sectionId: string, itemId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    const item = section?.items.find(i => i.id === itemId);
+    
+    setItemForImage({sectionId, itemId});
+    setImageUrl(item?.imageUrl || null);
+    setShowImageDialog(true);
+  };
+
   // Save comment
   const handleSaveComment = () => {
     if (!itemForComment) return;
@@ -213,6 +232,50 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
     setShowCommentDialog(false);
     setItemForComment(null);
     setCommentText('');
+  };
+
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setImageUrl(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove image
+  const removeImage = () => {
+    setImageUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Save image
+  const handleSaveImage = () => {
+    if (!itemForImage) return;
+
+    setSections(sections.map(section => 
+      section.id === itemForImage.sectionId 
+        ? { 
+            ...section, 
+            items: section.items.map(item => 
+              item.id === itemForImage.itemId 
+                ? { ...item, imageUrl: imageUrl || undefined } 
+                : item
+            ) 
+          } 
+        : section
+    ));
+    
+    setShowImageDialog(false);
+    setItemForImage(null);
+    setImageUrl(null);
   };
 
   // Calculate progress for each section
@@ -401,6 +464,12 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
                               Есть комментарий
                             </span>
                           )}
+                          
+                          {item.imageUrl && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-mono">
+                              Есть фото
+                            </span>
+                          )}
                         </div>
                         
                         <div className="flex items-center gap-1">
@@ -415,6 +484,21 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
                               className={cn(
                                 "h-4 w-4",
                                 item.comment ? "text-blue-500" : "text-gray-400"
+                              )} 
+                            />
+                          </Button>
+                          
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openImageDialog(section.id, item.id)}
+                            className="h-8 w-8"
+                          >
+                            <FontAwesomeIcon 
+                              icon={item.imageUrl ? faImage : faCamera} 
+                              className={cn(
+                                "h-4 w-4",
+                                item.imageUrl ? "text-green-500" : "text-gray-400"
                               )} 
                             />
                           </Button>
@@ -573,6 +657,68 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
                 Сохранить
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Image Dialog */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="font-mono sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Фото к пункту</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Фото</Label>
+              
+              {imageUrl ? (
+                <div className="relative">
+                  <img 
+                    src={imageUrl} 
+                    alt="Загруженное фото" 
+                    className="max-h-64 rounded border border-gray-200 mx-auto"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={removeImage}
+                  >
+                    <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-md border-gray-300 p-4">
+                  <label className="flex flex-col items-center cursor-pointer">
+                    <FontAwesomeIcon icon={faCamera} className="h-8 w-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Нажмите для загрузки фото</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              className="mr-2" 
+              onClick={() => {
+                setShowImageDialog(false);
+                setItemForImage(null);
+                setImageUrl(null);
+              }}
+            >
+              Отмена
+            </Button>
+            <Button onClick={handleSaveImage}>Сохранить</Button>
           </div>
         </DialogContent>
       </Dialog>

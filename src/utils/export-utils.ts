@@ -271,14 +271,23 @@ export const exportToPdf = async (report: SavedReport) => {
     // Create a temporary container to render the HTML
     const tempContainer = document.createElement('div');
     tempContainer.innerHTML = reportHtml;
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
+    
+    // Apply special styles to avoid rendering artifacts
     document.body.appendChild(tempContainer);
+    
+    // Set styles to ensure clean rendering
+    const allElements = tempContainer.querySelectorAll('*');
+    allElements.forEach(el => {
+      if (el instanceof HTMLElement) {
+        // Set font to a standard sans-serif to avoid font rendering issues
+        el.style.fontFamily = 'Arial, sans-serif';
+      }
+    });
     
     // Wait for images to load
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Create PDF with html2canvas
+    // Create PDF with html2canvas with improved settings
     const pdf = new jsPDF('p', 'pt', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -291,16 +300,30 @@ export const exportToPdf = async (report: SavedReport) => {
     const title = report.title;
     pdf.text(title, pageWidth / 2, 30, { align: 'center' });
     
-    // Process each section
+    // Process each section with better quality settings
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i] as HTMLElement;
       
-      // Capture section as canvas
+      // Capture section as canvas with improved settings
       const canvas = await html2canvas(section, {
-        scale: 1.5,
+        scale: 2, // Higher scale for better quality
         useCORS: true,
         allowTaint: true,
-        logging: false
+        logging: false,
+        backgroundColor: '#ffffff',
+        // Improved text rendering
+        onclone: (doc) => {
+          const allText = doc.querySelectorAll('*');
+          allText.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              // Force standard font
+              el.style.fontFamily = 'Arial, Helvetica, sans-serif';
+              // Improve text clarity
+              el.style.textRendering = 'optimizeLegibility';
+            }
+          });
+          return doc;
+        }
       });
       
       // Convert canvas to image

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -31,7 +30,8 @@ interface ChecklistItem {
   id: string;
   label: string;
   hasHelp: boolean;
-  imageUrl?: string; // Add image URL
+  imageUrl?: string;
+  showPhotoIcon?: boolean;
 }
 
 interface ItemState {
@@ -76,7 +76,7 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
         { id: "item9", label: "Подать электропитание питание на БЛА", hasHelp: true },
         { id: "item10", label: "Проверить наличие связи с НСУ", hasHelp: true },
         { id: "item11", label: "Пройти предполетные проверки", hasHelp: false },
-        { id: "item12", label: "Сделать контрольное фото (rphoto -e, rphoto -c 0)", hasHelp: true }
+        { id: "item12", label: "Сделать контрольное фото (rphoto -e, rphoto -c 0)", hasHelp: true, showPhotoIcon: true }
       ]
     }
   ];
@@ -87,9 +87,7 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     section3: true
   });
   
-  // Updated to store more complex state for each item
   const [itemStates, setItemStates] = useState<Record<string, ItemState>>(() => {
-    // Initialize state for each item
     const initialState: Record<string, ItemState> = {};
     checklistSections.forEach(section => {
       section.items.forEach(item => {
@@ -99,7 +97,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     return initialState;
   });
   
-  // Dialog for image and comments
   const [showItemDialog, setShowItemDialog] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [itemComment, setItemComment] = useState('');
@@ -126,7 +123,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     });
   };
   
-  // Open dialog for item details
   const openItemDetails = (id: string) => {
     const currentState = itemStates[id] || { checked: false };
     setSelectedItemId(id);
@@ -135,7 +131,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     setShowItemDialog(true);
   };
   
-  // Save item details
   const saveItemDetails = () => {
     if (!selectedItemId) return;
     
@@ -154,7 +149,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     setShowItemDialog(false);
   };
   
-  // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -168,7 +162,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     reader.readAsDataURL(file);
   };
   
-  // Remove image
   const removeImage = () => {
     setItemImage(null);
     if (fileInputRef.current) {
@@ -176,7 +169,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     }
   };
 
-  // Update total progress
   const updateTotalProgress = (states: Record<string, ItemState>) => {
     const totalItems = checklistSections.reduce((total, section) => total + section.items.length, 0);
     const checkedItems = Object.values(states).filter(state => state.checked).length;
@@ -184,27 +176,21 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
     onProgressUpdate(progress);
   };
 
-  // Calculate progress for each section
   const calculateProgress = (sectionItems: ChecklistItem[]) => {
     const itemIds = sectionItems.map(item => item.id);
     const checkedItems = itemIds.filter(id => itemStates[id]?.checked).length;
     return Math.round((checkedItems / itemIds.length) * 100);
   };
   
-  // Calculate and update total progress when component mounts or itemStates changes
   useEffect(() => {
     updateTotalProgress(itemStates);
   }, [itemStates, checklistSections, onProgressUpdate]);
 
-  // Save current checklist state as a report
   const saveAsReport = () => {
     try {
-      // Get the default template
       const template = createDefaultTemplate();
       
-      // Update the checked states based on current state
       const updatedSections = template.sections.map(section => {
-        // Update items with the current state
         const updatedItems = section.items.map(item => {
           const state = itemStates[item.id] || { checked: false };
           return { 
@@ -222,17 +208,16 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
         ...template,
         sections: updatedSections,
         date: new Date().toISOString(),
-        totalProgress: 0, // Will be calculated by the ReportManager
+        totalProgress: 0,
       };
       
-      // Save to localStorage
       const savedReports = localStorage.getItem('droneReports');
       let reports = savedReports ? JSON.parse(savedReports) : [];
       
       reports.push({
         ...reportToSave,
         droneData: {
-          batteryLevel: 75, // Example values
+          batteryLevel: 75,
           signalStrength: 75,
           gpsStatus: 'strong',
         },
@@ -329,20 +314,22 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openItemDetails(item.id);
-                          }}
-                        >
-                          <FontAwesomeIcon 
-                            icon={itemState.imageUrl ? faImage : faCamera} 
-                            className={`h-4 w-4 ${itemState.imageUrl ? 'text-green-500' : 'text-gray-400'}`} 
-                          />
-                        </Button>
+                        {item.showPhotoIcon && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openItemDetails(item.id);
+                            }}
+                          >
+                            <FontAwesomeIcon 
+                              icon={itemState.imageUrl ? faImage : faCamera} 
+                              className={`h-4 w-4 ${itemState.imageUrl ? 'text-green-500' : 'text-gray-400'}`} 
+                            />
+                          </Button>
+                        )}
                         
                         {item.hasHelp && (
                           <FontAwesomeIcon icon={faQuestionCircle} className="h-5 w-5 text-gray-400" />
@@ -350,14 +337,12 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
                       </div>
                     </div>
                     
-                    {/* Show comment if exists */}
                     {itemState.comment && (
                       <div className="mt-2 ml-7 text-xs text-gray-600 italic">
                         Комментарий: {itemState.comment}
                       </div>
                     )}
                     
-                    {/* Show thumbnail if image exists */}
                     {itemState.imageUrl && (
                       <div className="mt-2 ml-7">
                         <img 
@@ -375,7 +360,6 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
         </div>
       ))}
       
-      {/* Dialog for adding comment and image */}
       <Dialog open={showItemDialog} onOpenChange={setShowItemDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

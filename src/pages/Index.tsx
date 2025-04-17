@@ -5,6 +5,7 @@ import { MinimalistDroneDashboard } from '@/components/MinimalistDroneDashboard'
 import { WeatherSection } from '@/components/WeatherSection';
 import { PreflightChecklist } from '@/components/PreflightChecklist';
 import { ReportManager } from '@/components/report/ReportManager';
+import { RiskAnalysisDashboard } from '@/components/RiskAnalysisDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { fetchWeatherData } from '@/services/weatherService';
 
@@ -55,6 +56,8 @@ const Index = () => {
         />
         
         <WeatherSection isGoodWeather={isGoodWeather} />
+        
+        <RiskAnalysisDashboard />
         
         <Tabs defaultValue="standard-checklist" className="w-full">
           <TabsList className="w-full grid grid-cols-2 mb-4">
