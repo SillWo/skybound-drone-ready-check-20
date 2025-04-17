@@ -5,9 +5,11 @@ import { MinimalistDroneDashboard } from '@/components/MinimalistDroneDashboard'
 import { WeatherSection } from '@/components/WeatherSection';
 import { PreflightChecklist } from '@/components/PreflightChecklist';
 import { ReportManager } from '@/components/report/ReportManager';
-import { RiskAnalysisDashboard } from '@/components/RiskAnalysisDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { fetchWeatherData } from '@/services/weatherService';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
 const Index = () => {
   // Drone data state with updatable checklist progress
@@ -57,7 +59,14 @@ const Index = () => {
         
         <WeatherSection isGoodWeather={isGoodWeather} />
         
-        <RiskAnalysisDashboard />
+        <div className="flex justify-end mb-4">
+          <Link to="/risk-analysis">
+            <Button variant="outline" className="font-mono flex items-center gap-1">
+              <AlertTriangle className="h-4 w-4" />
+              Анализ рисков
+            </Button>
+          </Link>
+        </div>
         
         <Tabs defaultValue="standard-checklist" className="w-full">
           <TabsList className="w-full grid grid-cols-2 mb-4">

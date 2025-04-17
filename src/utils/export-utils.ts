@@ -22,6 +22,7 @@ const reportToHTML = (report: SavedReport): string => {
     <html>
     <head>
       <title>Отчет: ${report.title}</title>
+      <meta charset="UTF-8">
       <style>
         body {
           font-family: Arial, sans-serif;
@@ -271,23 +272,14 @@ export const exportToPdf = async (report: SavedReport) => {
     // Create a temporary container to render the HTML
     const tempContainer = document.createElement('div');
     tempContainer.innerHTML = reportHtml;
-    
-    // Apply special styles to avoid rendering artifacts
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
     document.body.appendChild(tempContainer);
-    
-    // Set styles to ensure clean rendering
-    const allElements = tempContainer.querySelectorAll('*');
-    allElements.forEach(el => {
-      if (el instanceof HTMLElement) {
-        // Set font to a standard sans-serif to avoid font rendering issues
-        el.style.fontFamily = 'Arial, sans-serif';
-      }
-    });
     
     // Wait for images to load
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Create PDF with html2canvas with improved settings
+    // Create PDF with html2canvas
     const pdf = new jsPDF('p', 'pt', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -300,34 +292,35 @@ export const exportToPdf = async (report: SavedReport) => {
     const title = report.title;
     pdf.text(title, pageWidth / 2, 30, { align: 'center' });
     
-    // Process each section with better quality settings
+    // Process each section
     for (let i = 0; i < sections.length; i++) {
       const section = sections[i] as HTMLElement;
       
-      // Capture section as canvas with improved settings
+      // Capture section as canvas with specific settings to prevent artifacts
       const canvas = await html2canvas(section, {
-        scale: 2, // Higher scale for better quality
+        scale: 1.5,
         useCORS: true,
         allowTaint: true,
         logging: false,
-        backgroundColor: '#ffffff',
-        // Improved text rendering
-        onclone: (doc) => {
-          const allText = doc.querySelectorAll('*');
-          allText.forEach((el) => {
-            if (el instanceof HTMLElement) {
-              // Force standard font
-              el.style.fontFamily = 'Arial, Helvetica, sans-serif';
-              // Improve text clarity
-              el.style.textRendering = 'optimizeLegibility';
+        letterRendering: true, // Improves text rendering
+        removeContainer: true, // Clean up after rendering
+        backgroundColor: '#FFFFFF', // Ensure white background
+        onclone: (clonedDoc) => {
+          // Extra processing to ensure clean text rendering
+          const texts = clonedDoc.querySelectorAll('*');
+          texts.forEach(node => {
+            if (node instanceof HTMLElement) {
+              node.style.textRendering = 'geometricPrecision';
+              node.style.fontSmooth = 'always';
+              node.style.webkitFontSmoothing = 'antialiased';
+              node.style.mozOsxFontSmoothing = 'grayscale';
             }
           });
-          return doc;
         }
       });
       
-      // Convert canvas to image
-      const imgData = canvas.toDataURL('image/png');
+      // Convert canvas to image with proper encoding
+      const imgData = canvas.toDataURL('image/jpeg', 1.0); // Using JPEG with max quality
       
       // Calculate image dimensions to fit page width
       const imgWidth = pageWidth - 40; // margins
@@ -345,7 +338,7 @@ export const exportToPdf = async (report: SavedReport) => {
       }
       
       // Add image to PDF
-      pdf.addImage(imgData, 'PNG', 20, currentY, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 20, currentY, imgWidth, imgHeight);
       currentY += imgHeight + 20;
     }
     

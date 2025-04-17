@@ -18,7 +18,7 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { ReportItem, ReportSection, Report } from '@/types/report';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
@@ -53,10 +53,10 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
   const [itemForComment, setItemForComment] = useState<{sectionId: string, itemId: string} | null>(null);
   const [commentText, setCommentText] = useState('');
 
-  // New state for image dialog
+  // Image upload
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [itemForImage, setItemForImage] = useState<{sectionId: string, itemId: string} | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Toggle section expansion
@@ -202,16 +202,6 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
     setShowCommentDialog(true);
   };
 
-  // Open image dialog
-  const openImageDialog = (sectionId: string, itemId: string) => {
-    const section = sections.find(s => s.id === sectionId);
-    const item = section?.items.find(i => i.id === itemId);
-    
-    setItemForImage({sectionId, itemId});
-    setImageUrl(item?.imageUrl || null);
-    setShowImageDialog(true);
-  };
-
   // Save comment
   const handleSaveComment = () => {
     if (!itemForComment) return;
@@ -234,6 +224,16 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
     setCommentText('');
   };
 
+  // Open image dialog
+  const openImageDialog = (sectionId: string, itemId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    const item = section?.items.find(i => i.id === itemId);
+    
+    setItemForImage({sectionId, itemId});
+    setImagePreview(item?.imageUrl || null);
+    setShowImageDialog(true);
+  };
+
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -242,7 +242,7 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        setImageUrl(event.target.result as string);
+        setImagePreview(event.target.result as string);
       }
     };
     reader.readAsDataURL(file);
@@ -250,7 +250,7 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
 
   // Remove image
   const removeImage = () => {
-    setImageUrl(null);
+    setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -266,7 +266,7 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
             ...section, 
             items: section.items.map(item => 
               item.id === itemForImage.itemId 
-                ? { ...item, imageUrl: imageUrl || undefined } 
+                ? { ...item, imageUrl: imagePreview } 
                 : item
             ) 
           } 
@@ -275,7 +275,7 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
     
     setShowImageDialog(false);
     setItemForImage(null);
-    setImageUrl(null);
+    setImagePreview(null);
   };
 
   // Calculate progress for each section
@@ -495,7 +495,7 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
                             className="h-8 w-8"
                           >
                             <FontAwesomeIcon 
-                              icon={item.imageUrl ? faImage : faCamera} 
+                              icon={item.imageUrl ? faImage : faCamera}
                               className={cn(
                                 "h-4 w-4",
                                 item.imageUrl ? "text-green-500" : "text-gray-400"
@@ -663,19 +663,19 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
       
       {/* Image Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent className="font-mono sm:max-w-md">
+        <DialogContent className="font-mono">
           <DialogHeader>
             <DialogTitle>Фото к пункту</DialogTitle>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Фото</Label>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Загрузить фото</Label>
               
-              {imageUrl ? (
+              {imagePreview ? (
                 <div className="relative">
                   <img 
-                    src={imageUrl} 
+                    src={imagePreview} 
                     alt="Загруженное фото" 
                     className="max-h-64 rounded border border-gray-200 mx-auto"
                   />
@@ -704,21 +704,20 @@ export function ReportConstructor({ initialReport, onSaveReport }: ReportConstru
                 </div>
               )}
             </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              variant="outline" 
-              className="mr-2" 
-              onClick={() => {
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
                 setShowImageDialog(false);
                 setItemForImage(null);
-                setImageUrl(null);
-              }}
-            >
-              Отмена
-            </Button>
-            <Button onClick={handleSaveImage}>Сохранить</Button>
+                setImagePreview(null);
+              }}>
+                Отмена
+              </Button>
+              
+              <Button onClick={handleSaveImage}>
+                Сохранить
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
