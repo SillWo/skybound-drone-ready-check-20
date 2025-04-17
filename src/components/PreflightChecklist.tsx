@@ -11,6 +11,11 @@ import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
 import { toast } from './ui/use-toast';
 import { createDefaultTemplate } from '@/utils/default-report-template';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface ChecklistSection {
   id: string;
@@ -163,36 +168,40 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
       </div>
       
       {checklistSections.map((section) => (
-        <div key={section.id} className="bg-white shadow-sm rounded-md mb-4">
-          <div 
-            className="p-4 flex items-center justify-between cursor-pointer"
-            onClick={() => toggleSection(section.id)}
-          >
-            <div>
-              <h3 className="font-mono font-medium text-lg">{section.title}</h3>
-              <p className="font-mono text-sm text-gray-500">{section.location}</p>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-1.5 bg-gray-300 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-green-500 rounded-full transition-all" 
-                    style={{ width: `${calculateProgress(section.items)}%` }}
-                  />
-                </div>
-                <span className="text-sm font-mono font-medium">{calculateProgress(section.items)}%</span>
+        <Collapsible
+          key={section.id}
+          className="bg-white shadow-sm rounded-md mb-4"
+          open={expandedSections[section.id]}
+          onOpenChange={(isOpen) => setExpandedSections(prev => ({ ...prev, [section.id]: isOpen }))}
+        >
+          <div className="p-4 flex items-center justify-between">
+            <CollapsibleTrigger className="flex-1 flex justify-between items-center">
+              <div>
+                <h3 className="font-mono font-medium text-lg text-left">{section.title}</h3>
+                <p className="font-mono text-sm text-gray-500 text-left">{section.location}</p>
               </div>
               
-              {expandedSections[section.id] ? (
-                <FontAwesomeIcon icon={faChevronUp} className="h-5 w-5 text-gray-500" />
-              ) : (
-                <FontAwesomeIcon icon={faChevronDown} className="h-5 w-5 text-gray-500" />
-              )}
-            </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-1.5 bg-gray-300 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-green-500 rounded-full transition-all" 
+                      style={{ width: `${calculateProgress(section.items)}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-mono font-medium">{calculateProgress(section.items)}%</span>
+                </div>
+                
+                {expandedSections[section.id] ? (
+                  <FontAwesomeIcon icon={faChevronUp} className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <FontAwesomeIcon icon={faChevronDown} className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+            </CollapsibleTrigger>
           </div>
           
-          {expandedSections[section.id] && (
+          <CollapsibleContent>
             <div>
               {section.items.map((item) => (
                 <div 
@@ -220,8 +229,8 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       ))}
     </>
   );
