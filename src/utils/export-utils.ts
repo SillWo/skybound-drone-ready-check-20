@@ -1,9 +1,9 @@
 
-import { Report, SavedReport } from '@/types/report';
+import { Report, SavedReport, ReportItem } from '@/types/report';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
+import html2canvas from 'html2canvas';
 
 // Format date for display
 const formatDate = (dateString: string) => {
@@ -14,118 +14,332 @@ const formatDate = (dateString: string) => {
   }
 };
 
-// Export to PDF
-export const exportToPdf = (report: SavedReport) => {
-  try {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-
-    // Add logo
-    doc.setFontSize(18);
-    doc.text('АБАКС', pageWidth / 2, 15, { align: 'center' });
-    
-    // Add report title
-    doc.setFontSize(16);
-    doc.text(report.title, pageWidth / 2, 25, { align: 'center' });
-    
-    // Add date and progress info
-    doc.setFontSize(10);
-    doc.text(`Дата отчета: ${formatDate(report.date)}`, 14, 35);
-    doc.text(`Общий прогресс: ${report.totalProgress}%`, 14, 40);
-    
-    // Add drone data
-    doc.setFontSize(12);
-    doc.text('Данные дрона:', 14, 50);
-    doc.setFontSize(10);
-    doc.text(`Уровень батареи: ${report.droneData.batteryLevel}%`, 20, 55);
-    doc.text(`Сила сигнала: ${report.droneData.signalStrength}%`, 20, 60);
-    doc.text(`Статус GPS: ${mapGpsStatus(report.droneData.gpsStatus)}`, 20, 65);
-    
-    // Add weather data
-    doc.setFontSize(12);
-    doc.text('Погодные условия:', 14, 75);
-    doc.setFontSize(10);
-    doc.text(`Температура: ${report.weatherData.temperature}°C`, 20, 80);
-    doc.text(`Скорость ветра: ${report.weatherData.windSpeed} м/с`, 20, 85);
-    doc.text(`Видимость: ${report.weatherData.visibility}`, 20, 90);
-    doc.text(`Подходит для полета: ${report.weatherData.isGoodWeather ? 'Да' : 'Нет'}`, 20, 95);
-    
-    let yPosition = 105;
-    const lineHeight = 5;
-    
-    // For each section
-    report.sections.forEach((section, sectionIndex) => {
-      if (yPosition > doc.internal.pageSize.getHeight() - 40) {
-        doc.addPage();
-        yPosition = 20;
-      }
+// Convert report to HTML
+const reportToHTML = (report: SavedReport): string => {
+  const reportDate = formatDate(report.date);
+  
+  let reportHTML = `
+    <html>
+    <head>
+      <title>Отчет: ${report.title}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.5;
+          color: #333;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .report-header {
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 20px;
+        }
+        .report-title {
+          font-size: 24px;
+          font-weight: bold;
+          margin: 10px 0;
+        }
+        .report-meta {
+          display: flex;
+          justify-content: space-between;
+          margin: 20px 0;
+          color: #666;
+        }
+        .drone-data, .weather-data {
+          background: #f9f9f9;
+          border: 1px solid #eee;
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 20px;
+        }
+        .data-title {
+          font-weight: bold;
+          margin-bottom: 10px;
+          font-size: 16px;
+        }
+        .data-row {
+          display: flex;
+          margin: 5px 0;
+        }
+        .data-label {
+          font-weight: 500;
+          width: 160px;
+        }
+        .section {
+          margin: 30px 0;
+          border: 1px solid #eee;
+          border-radius: 8px;
+          padding: 15px;
+        }
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 10px;
+          margin-bottom: 15px;
+        }
+        .section-title {
+          font-weight: bold;
+          font-size: 18px;
+        }
+        .section-location {
+          color: #666;
+          font-style: italic;
+        }
+        .section-progress {
+          font-weight: bold;
+          color: #4CAF50;
+        }
+        .items-list {
+          list-style-type: none;
+          padding: 0;
+        }
+        .checklist-item {
+          padding: 10px;
+          border-bottom: 1px solid #f5f5f5;
+          display: flex;
+        }
+        .item-checked {
+          background-color: #f9fff9;
+        }
+        .item-status {
+          font-weight: bold;
+          width: 30px;
+        }
+        .item-checked .item-status {
+          color: #4CAF50;
+        }
+        .item-unchecked .item-status {
+          color: #f44336;
+        }
+        .item-content {
+          flex: 1;
+        }
+        .item-comment {
+          margin-top: 5px;
+          color: #666;
+          font-style: italic;
+        }
+        .item-image {
+          max-width: 200px;
+          margin-top: 10px;
+          border: 1px solid #eee;
+        }
+        .page-footer {
+          margin-top: 40px;
+          text-align: center;
+          font-size: 12px;
+          color: #999;
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+        }
+        .progress-bar {
+          height: 10px;
+          background: #eee;
+          border-radius: 5px;
+          margin: 5px 0;
+          overflow: hidden;
+        }
+        .progress-fill {
+          height: 100%;
+          background: #4CAF50;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="report-header">
+        <div class="report-title">${report.title}</div>
+        <div>Дата создания: ${reportDate}</div>
+      </div>
       
-      // Section header
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${sectionIndex + 1}. ${section.title}`, 14, yPosition);
-      yPosition += lineHeight;
+      <div class="report-meta">
+        <div>Общий прогресс: ${report.totalProgress}%</div>
+        <div>ID отчета: ${report.id.substring(0, 8)}</div>
+      </div>
       
-      doc.setFontSize(10);
-      doc.text(`Расположение: ${section.location}`, 18, yPosition);
-      yPosition += lineHeight * 1.5;
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${report.totalProgress}%"></div>
+      </div>
       
-      // Calculate progress for the section
-      const totalItems = section.items.length;
-      const checkedItems = section.items.filter(item => item.checked).length;
-      const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+      <div class="drone-data">
+        <div class="data-title">Данные дрона</div>
+        <div class="data-row">
+          <div class="data-label">Уровень батареи:</div>
+          <div>${report.droneData.batteryLevel}%</div>
+        </div>
+        <div class="data-row">
+          <div class="data-label">Сила сигнала:</div>
+          <div>${report.droneData.signalStrength}%</div>
+        </div>
+        <div class="data-row">
+          <div class="data-label">Статус GPS:</div>
+          <div>${mapGpsStatus(report.droneData.gpsStatus)}</div>
+        </div>
+      </div>
       
-      doc.text(`Прогресс раздела: ${progress}%`, 18, yPosition);
-      yPosition += lineHeight * 1.5;
-      
-      // Create table for checklist items
-      const tableData = section.items.map(item => [
-        item.checked ? '✓' : '✗',
-        item.label,
-        item.comment || ''
-      ]);
-      
-      if (tableData.length > 0) {
-        autoTable(doc, {
-          startY: yPosition,
-          head: [['Статус', 'Пункт', 'Комментарий']],
-          body: tableData,
-          theme: 'grid',
-          headStyles: {
-            fillColor: [200, 200, 200],
-            textColor: [0, 0, 0],
-            fontStyle: 'bold'
-          },
-          styles: {
-            fontSize: 8,
-            cellPadding: 2
-          },
-          columnStyles: {
-            0: { cellWidth: 15 },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 50 }
-          }
-        });
+      <div class="weather-data">
+        <div class="data-title">Погодные условия</div>
+        <div class="data-row">
+          <div class="data-label">Температура:</div>
+          <div>${report.weatherData.temperature}°C</div>
+        </div>
+        <div class="data-row">
+          <div class="data-label">Скорость ветра:</div>
+          <div>${report.weatherData.windSpeed} м/с</div>
+        </div>
+        <div class="data-row">
+          <div class="data-label">Видимость:</div>
+          <div>${report.weatherData.visibility}</div>
+        </div>
+        <div class="data-row">
+          <div class="data-label">Подходит для полета:</div>
+          <div>${report.weatherData.isGoodWeather ? 'Да' : 'Нет'}</div>
+        </div>
+      </div>
+  `;
+  
+  // Add sections
+  report.sections.forEach((section, sectionIndex) => {
+    // Calculate section progress
+    const totalItems = section.items.length;
+    const checkedItems = section.items.filter(item => item.checked).length;
+    const progress = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+    
+    reportHTML += `
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">${sectionIndex + 1}. ${section.title}</div>
+            <div class="section-location">${section.location}</div>
+          </div>
+          <div class="section-progress">${progress}%</div>
+        </div>
         
-        // Update position after table
-        yPosition = (doc as any).lastAutoTable.finalY + 15;
-      } else {
-        doc.text('Нет пунктов в разделе', 18, yPosition);
-        yPosition += lineHeight * 2;
-      }
-    });
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${progress}%"></div>
+        </div>
+    `;
     
-    // Add footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(`Страница ${i} из ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-      doc.text(`Сформировано: ${format(new Date(), 'dd.MM.yyyy HH:mm')}`, 14, doc.internal.pageSize.getHeight() - 10);
+    if (section.items.length === 0) {
+      reportHTML += `<p>Нет пунктов в разделе</p>`;
+    } else {
+      reportHTML += `<ul class="items-list">`;
+      
+      section.items.forEach(item => {
+        const itemClass = item.checked ? 'item-checked' : 'item-unchecked';
+        const statusIcon = item.checked ? '✓' : '✗';
+        
+        reportHTML += `
+          <li class="checklist-item ${itemClass}">
+            <div class="item-status">${statusIcon}</div>
+            <div class="item-content">
+              <div>${item.label}</div>
+              ${item.comment ? `<div class="item-comment">Комментарий: ${item.comment}</div>` : ''}
+              ${item.imageUrl ? `<img src="${item.imageUrl}" class="item-image" alt="Фото для пункта"/>` : ''}
+            </div>
+          </li>
+        `;
+      });
+      
+      reportHTML += `</ul>`;
     }
     
+    reportHTML += `</div>`;
+  });
+  
+  // Add footer
+  reportHTML += `
+      <div class="page-footer">
+        Отчет сформирован: ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: ru })}
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return reportHTML;
+};
+
+// Export to PDF using HTML
+export const exportToPdf = async (report: SavedReport) => {
+  try {
+    // Create HTML content for the report
+    const reportHtml = reportToHTML(report);
+    
+    // Create a temporary container to render the HTML
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = reportHtml;
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    document.body.appendChild(tempContainer);
+    
+    // Wait for images to load
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Create PDF with html2canvas
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const sections = tempContainer.querySelectorAll('.section, .drone-data, .weather-data, .report-header');
+    
+    let currentY = 40;
+    
+    // Add first page header
+    pdf.setFontSize(18);
+    const title = report.title;
+    pdf.text(title, pageWidth / 2, 30, { align: 'center' });
+    
+    // Process each section
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i] as HTMLElement;
+      
+      // Capture section as canvas
+      const canvas = await html2canvas(section, {
+        scale: 1.5,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      });
+      
+      // Convert canvas to image
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Calculate image dimensions to fit page width
+      const imgWidth = pageWidth - 40; // margins
+      const ratio = canvas.width / imgWidth;
+      const imgHeight = canvas.height / ratio;
+      
+      // Check if we need a new page
+      if (currentY + imgHeight > pageHeight - 40) {
+        pdf.addPage();
+        currentY = 40;
+        
+        // Add page header
+        pdf.setFontSize(12);
+        pdf.text(title, pageWidth / 2, 20, { align: 'center' });
+      }
+      
+      // Add image to PDF
+      pdf.addImage(imgData, 'PNG', 20, currentY, imgWidth, imgHeight);
+      currentY += imgHeight + 20;
+    }
+    
+    // Add page numbers
+    const totalPages = pdf.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(10);
+      pdf.text(`Страница ${i} из ${totalPages}`, pageWidth / 2, pageHeight - 20, { align: 'center' });
+    }
+    
+    // Remove the temporary container
+    document.body.removeChild(tempContainer);
+    
     // Save PDF
-    doc.save(`Отчет_${formatFileName(report.title)}_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.pdf`);
+    const fileName = `Отчет_${formatFileName(report.title)}_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.pdf`;
+    pdf.save(fileName);
     
   } catch (error) {
     console.error('Error generating PDF:', error);

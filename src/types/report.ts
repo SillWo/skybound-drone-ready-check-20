@@ -5,6 +5,7 @@ export interface ReportItem {
   hasHelp: boolean;
   checked: boolean;
   comment?: string;
+  imageUrl?: string;
 }
 
 export interface ReportSection {

@@ -22,8 +22,8 @@ import { Checkbox } from '../ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Slider } from '../ui/slider';
 import { Calendar } from '../ui/calendar';
-import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { toast } from '../ui/use-toast';
 
 interface ReportHistoryProps {
   reports: SavedReport[];
@@ -77,7 +77,7 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
   
   // Toggle report details
   const toggleReportDetails = (reportId: string) => {
-    setSelectedReport(selectedReport === reportId ? null : reportId);
+    setSelectedReport(prev => prev === reportId ? null : reportId);
   };
   
   // Format date
@@ -90,8 +90,27 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
   };
   
   // Handle export to PDF
-  const handleExportToPdf = (report: SavedReport) => {
-    exportToPdf(report);
+  const handleExportToPdf = async (report: SavedReport) => {
+    toast({
+      title: "Создание PDF",
+      description: "Пожалуйста, подождите, PDF файл создается...",
+    });
+    
+    try {
+      await exportToPdf(report);
+      
+      toast({
+        title: "PDF создан",
+        description: "PDF файл успешно создан и скачан",
+      });
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать PDF файл",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle export to JSON
@@ -347,6 +366,15 @@ export function ReportHistory({ reports, onViewReport, onDeleteReport }: ReportH
                                       {item.comment && (
                                         <div className="text-xs text-blue-500 pl-2">
                                           Комментарий: {item.comment}
+                                        </div>
+                                      )}
+                                      {item.imageUrl && (
+                                        <div className="mt-1">
+                                          <img 
+                                            src={item.imageUrl} 
+                                            alt="Фото" 
+                                            className="max-h-20 rounded border border-gray-200"
+                                          />
                                         </div>
                                       )}
                                     </div>
