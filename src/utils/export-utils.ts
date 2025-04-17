@@ -302,7 +302,7 @@ export const exportToPdf = async (report: SavedReport) => {
         useCORS: true,
         allowTaint: true,
         logging: false,
-        letterRendering: true, // Improves text rendering
+        // letterRendering: true, - удалено из-за ошибки TS2353
         removeContainer: true, // Clean up after rendering
         backgroundColor: '#FFFFFF', // Ensure white background
         onclone: (clonedDoc) => {
@@ -311,9 +311,10 @@ export const exportToPdf = async (report: SavedReport) => {
           texts.forEach(node => {
             if (node instanceof HTMLElement) {
               node.style.textRendering = 'geometricPrecision';
-              node.style.fontSmooth = 'always';
-              node.style.webkitFontSmoothing = 'antialiased';
-              node.style.mozOsxFontSmoothing = 'grayscale';
+              // Удалены несуществующие свойства, которые вызывали ошибки
+              // node.style.fontSmooth = 'always';
+              // node.style.webkitFontSmoothing = 'antialiased';
+              // node.style.mozOsxFontSmoothing = 'grayscale';
             }
           });
         }

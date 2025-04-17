@@ -294,20 +294,23 @@ export function PreflightChecklist({ onProgressUpdate }: PreflightChecklistProps
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openItemDetails(item.id);
-                          }}
-                        >
-                          <FontAwesomeIcon 
-                            icon={itemState.imageUrl ? faImage : faCamera} 
-                            className={`h-4 w-4 ${itemState.imageUrl ? 'text-green-500' : 'text-gray-400'}`} 
-                          />
-                        </Button>
+                        {/* Показываем кнопку фотоаппарата только для пункта "Сделать контрольное фото" */}
+                        {item.label.includes('Сделать контрольное фото') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openItemDetails(item.id);
+                            }}
+                          >
+                            <FontAwesomeIcon 
+                              icon={itemState.imageUrl ? faImage : faCamera} 
+                              className={`h-4 w-4 ${itemState.imageUrl ? 'text-green-500' : 'text-gray-400'}`} 
+                            />
+                          </Button>
+                        )}
                         
                         {item.hasHelp && (
                           <FontAwesomeIcon icon={faQuestionCircle} className="h-5 w-5 text-gray-400" />
