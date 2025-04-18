@@ -1,6 +1,9 @@
 
 import { DroneHeader } from '@/components/DroneHeader';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 
 const User = () => {
   return (
@@ -8,6 +11,15 @@ const User = () => {
       <div className="max-w-4xl mx-auto">
         <DroneHeader />
         
+        <div className="mb-4">
+          <Link to="/">
+            <Button variant="outline" size="sm" className="font-mono flex items-center gap-1">
+              <ChevronLeft className="h-4 w-4" />
+              Вернуться на главную
+            </Button>
+          </Link>
+        </div>
+
         <div className="bg-white rounded-lg p-6 mt-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
