@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, ClipboardCheck, FileText, AlertTriangle, History } from 'lucide-react';
+import { User, FileText, AlertTriangle, History } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +12,13 @@ import {
 export const DroneHeader = () => {
   return (
     <header className="w-full bg-[#f0f0f0] p-4 rounded-lg mb-6 flex justify-between items-center font-mono">
-      <div className="flex items-center gap-2">
+      <Link to="/" className="flex items-center gap-2">
         <img 
           src="/lovable-uploads/582d9d93-d3d5-45c4-970c-08fb25417162.png" 
           alt="АБАКС Логотип" 
           className="h-12 w-auto object-contain mix-blend-multiply"
         />
-      </div>
+      </Link>
       
       <DropdownMenu>
         <DropdownMenuTrigger className="p-2 hover:bg-gray-200 rounded-md transition-colors">
@@ -33,12 +33,6 @@ export const DroneHeader = () => {
             <Link to="/user" className="flex items-center gap-3 py-3">
               <User className="h-5 w-5" />
               <span className="text-base">Данные пользователя</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/" className="flex items-center gap-3 py-3">
-              <ClipboardCheck className="h-5 w-5" />
-              <span className="text-base">Стандартный чек-лист</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -64,3 +58,4 @@ export const DroneHeader = () => {
     </header>
   );
 };
+
