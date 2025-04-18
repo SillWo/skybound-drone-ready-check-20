@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, ClipboardCheck, FileText } from 'lucide-react';
+import { User, ClipboardCheck, FileText, AlertTriangle, History } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,29 +22,41 @@ export const DroneHeader = () => {
       
       <DropdownMenu>
         <DropdownMenuTrigger className="p-2 hover:bg-gray-200 rounded-md transition-colors">
-          <div className="w-6 h-5 flex flex-col justify-between">
+          <div className="w-6 h-4 flex flex-col justify-between">
             <div className="h-0.5 w-full bg-gray-600"></div>
             <div className="h-0.5 w-full bg-gray-600"></div>
             <div className="h-0.5 w-full bg-gray-600"></div>
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-64 bg-white">
           <DropdownMenuItem asChild>
-            <Link to="/user" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span>Данные пользователя</span>
+            <Link to="/user" className="flex items-center gap-3 py-3">
+              <User className="h-5 w-5" />
+              <span className="text-base">Данные пользователя</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/" className="flex items-center gap-2">
-              <ClipboardCheck className="h-4 w-4" />
-              <span>Стандартный чек-лист</span>
+            <Link to="/" className="flex items-center gap-3 py-3">
+              <ClipboardCheck className="h-5 w-5" />
+              <span className="text-base">Стандартный чек-лист</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/report" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span>Конструктор отчётов</span>
+            <Link to="/report" className="flex items-center gap-3 py-3">
+              <FileText className="h-5 w-5" />
+              <span className="text-base">Конструктор отчётов</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/report-history" className="flex items-center gap-3 py-3">
+              <History className="h-5 w-5" />
+              <span className="text-base">История отчётов</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/risk-analysis" className="flex items-center gap-3 py-3">
+              <AlertTriangle className="h-5 w-5" />
+              <span className="text-base">Анализ рисков</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
